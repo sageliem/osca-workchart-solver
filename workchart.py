@@ -23,8 +23,10 @@ BEST_EVE_KEY = 6
 HAS_POS_KEY = 13
 
 avail = [] # Availability stored as list of ['Name', [morning avail], [afternoon avail], [evening avail]]
-with open('input.csv', mode = 'r') as file:
+with open('PERMANENT BBC Workchart Availability F24 (Responses) - Form Responses 1.csv', mode = 'r') as file:
     reader = csv.reader(file)
+    next(reader)
+    next(reader)
     for row in reader:
         if row[HAS_POS_KEY] != 'Yes':
             # Availability lists (per person, by day of week) Includes 8th empty slot to handle empty slots
@@ -38,15 +40,16 @@ with open('input.csv', mode = 'r') as file:
                 av_A[DAY_NAMES.index(avail_day)] = 1
             for avail_day in row[ALL_EVE_KEY].split(', '):
                 av_E[DAY_NAMES.index(avail_day)] = 1
-
+            
+            best_avail_weight = 1.01
             for avail_day in row[BEST_MOR_KEY].split(', '):
-                av_M[DAY_NAMES.index(avail_day)] = 2
+                av_M[DAY_NAMES.index(avail_day)] = best_avail_weight
             for avail_day in row[BEST_AFT_KEY].split(', '):
-                av_A[DAY_NAMES.index(avail_day)] = 2
+                av_A[DAY_NAMES.index(avail_day)] = best_avail_weight
             for avail_day in row[BEST_EVE_KEY].split(', '):
-                av_E[DAY_NAMES.index(avail_day)] = 2
+                av_E[DAY_NAMES.index(avail_day)] = best_avail_weight
 
-            avail.append([row['\ufeffname'], av_M, av_A, av_E]) 
+            avail.append([row[2], av_M, av_A, av_E]) 
 
 members = len(avail) # total membership (excluding elected positions)
 
@@ -73,14 +76,20 @@ for m in range(members):
         c += M[d][m] + A[d][m] + E[d][m]
     problem += (c==hours)
 
+# Exclude weekend evening shifts
+#for m in range(members):
+#    for d in range(4, 7):
+#        if E[d][m] == 1:
+#            problem += 1
+
 # Minimum/maximum resources
 min_per_shift = 1
 max_per_shift = 2
 for d in range(7):
     # Counters
-    mor = None
-    aft = None
-    eve = None
+    mor = 0
+    aft = 0
+    eve = 0
     # count people assigned to each shift
     for m in range(members):
         mor += M[d][m] 
@@ -88,11 +97,17 @@ for d in range(7):
         eve += E[d][m]
     problem += mor >= min_per_shift
     problem += aft >= min_per_shift
-    problem += eve >= min_per_shift
+    if d < 4: # Not weekend evening
+        problem += eve >= min_per_shift
+    else:
+        problem += eve == 0
 
     problem += mor <= max_per_shift
     problem += aft <= max_per_shift
-    problem += eve <= max_per_shift
+    if d < 4: # Not weekend evening
+        problem += eve <= max_per_shift
+    else: # Weekend evening
+        problem += (eve==0)
 
 # Solve problem using cbc solver
 problem.writeLP("WorkchartModel.lp")
@@ -107,11 +122,11 @@ if LpStatus[problem.status] == 'Optimal':
         shift_e = ''
         for m in range(members):
             if value(M[d][m]) == 1.0:
-                shift_m = avail[m][0]
+                shift_m += avail[m][0]
             if value(A[d][m]) == 1.0:
-                shift_a = avail[m][0]
+                shift_a += avail[m][0]
             if value(E[d][m]) == 1.0:
-                shift_e = avail[m][0]
+                shift_e += avail[m][0]
         print(DAY_NAMES[d], "Morning:", shift_m)
         print(DAY_NAMES[d], "Afternoon:", shift_a)
         print(DAY_NAMES[d], "Evening:", shift_e)
