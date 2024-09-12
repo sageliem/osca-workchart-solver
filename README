@@ -1,10 +1,3 @@
 OSCA WORKCHART SOLVER
 
-Author: Sage Liem
-Solves co-op  workchart scheduling as a linear optimization problem. Manually creating the
-workchart is often a time-consuming process, especially for co-ops with large
-membership and complex workcharts.
-
-Requirements:
-PuLP (linear optimization solver)
-gsheets (access google sheets)
+dependencies: PuLP
