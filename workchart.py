@@ -1,7 +1,10 @@
-from pulp import *
+import sys
 import csv
+from pulp import *
 
-print(listSolvers(onlyAvailable=True))
+if len(sys.argv) != 2:
+    print("Please specify one file.")
+    sys.exit()
 
 # Constants
 days = 7
@@ -23,7 +26,8 @@ BEST_EVE_KEY = 6
 HAS_POS_KEY = 13
 
 avail = [] # Availability stored as list of ['Name', [morning avail], [afternoon avail], [evening avail]]
-with open('PERMANENT BBC Workchart Availability F24 (Responses) - Form Responses 1.csv', mode = 'r') as file:
+
+with open(sys.argv[1], mode = 'r') as file:
     reader = csv.reader(file)
     next(reader)
     next(reader)
