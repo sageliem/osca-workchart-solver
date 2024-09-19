@@ -80,12 +80,6 @@ for m in range(members):
         c += M[d][m] + A[d][m] + E[d][m]
     problem += (c==hours)
 
-# Exclude weekend evening shifts
-#for m in range(members):
-#    for d in range(4, 7):
-#        if E[d][m] == 1:
-#            problem += 1
-
 # Minimum/maximum resources
 min_per_shift = 1
 max_per_shift = 2
@@ -101,17 +95,14 @@ for d in range(7):
         eve += E[d][m]
     problem += mor >= min_per_shift
     problem += aft >= min_per_shift
-    if d < 4: # Not weekend evening
-        problem += eve >= min_per_shift
-    else:
-        problem += eve == 0
 
     problem += mor <= max_per_shift
     problem += aft <= max_per_shift
-    if d < 4: # Not weekend evening
-        problem += eve <= max_per_shift
-    else: # Weekend evening
-        problem += (eve==0)
+    if d == 4 or d == 5: # Weekend evening
+        problem += eve == 0
+    else:
+        problem += (eve >= min_per_shift)
+        problem += (eve <= max_per_shift)
 
 # Solve problem using cbc solver
 problem.writeLP("WorkchartModel.lp")
